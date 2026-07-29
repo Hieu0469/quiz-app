@@ -1,19 +1,19 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next'
+import './globals.css'
+import Navbar from '@/components/Navbar'
 
 export const metadata: Metadata = {
-  title: "Quiz App",
-  description: "Quiz website",
-};
+  title: 'QuizApp',
+  description: 'Tạo và làm bài quiz',
+}
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
-      <body>{children}</body>
+      <body>
+        <Navbar />
+        <main>{children}</main>
+      </body>
     </html>
-  );
+  )
 }

@@ -1,19 +1,19 @@
-// Dùng biến môi trường để xác thực admin đơn giản
-export const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123'
+import { supabase } from './supabase'
 
-export function isAdmin(): boolean {
-  if (typeof window === 'undefined') return false
-  return localStorage.getItem('isAdmin') === 'true'
+export async function signInWithGoogle() {
+  await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/`
+    }
+  })
 }
 
-export function loginAdmin(password: string): boolean {
-  if (password === ADMIN_PASSWORD) {
-    localStorage.setItem('isAdmin', 'true')
-    return true
-  }
-  return false
+export async function signOut() {
+  await supabase.auth.signOut()
 }
 
-export function logoutAdmin() {
-  localStorage.removeItem('isAdmin')
+export async function getUser() {
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
 }

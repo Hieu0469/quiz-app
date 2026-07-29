@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { isAdmin } from '@/lib/auth'
 import { useRouter, useParams } from 'next/navigation'
 
+
 type Question = {
   id: string
   type: string

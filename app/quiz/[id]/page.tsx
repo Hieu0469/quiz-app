@@ -237,9 +237,19 @@ export default function QuizPage() {
             <button key={i} disabled={answered}
               onClick={() => setUserAnswer(String(i))}
               className={`w-full text-left px-4 py-3 rounded-lg border transition
-                ${userAnswer === String(i) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}
-                ${answered && String(i) === q.correct_answer ? 'border-green-500 bg-green-50' : ''}
-                ${answered && userAnswer === String(i) && !isCorrect ? 'border-red-400 bg-red-50' : ''}
+                ${answered && String(i) === q.correct_answer
+                  ? 'border-green-500 bg-green-500 text-white'
+                  : ''}
+                ${answered && userAnswer === String(i) && !isCorrect
+                  ? 'border-red-400 bg-red-500 text-white'
+                  : ''}
+                ${!answered && userAnswer === String(i)
+                  ? 'border-blue-500 bg-blue-600 text-white'
+                  : ''}
+                ${(!answered && userAnswer !== String(i)) ||
+                  (answered && String(i) !== q.correct_answer && userAnswer !== String(i))
+                  ? 'border-gray-600 bg-transparent text-white'
+                  : ''}
               `}>
               <span className="font-medium mr-2">{['A','B','C','D'][i]}.</span>{opt}
             </button>

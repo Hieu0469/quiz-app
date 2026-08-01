@@ -78,7 +78,12 @@ export default function QuizPage() {
   const q = questions[current]
 
   function checkAnswer() {
-    const correct = userAnswer === q.correct_answer
+    let correct = false
+    if (q.type === 'fill_in_blank') {
+      correct = userAnswer.trim().toLowerCase() === q.correct_answer.toLowerCase()
+    } else {
+      correct = userAnswer === q.correct_answer
+    }
     setIsCorrect(correct)
     setAnswered(true)
     if (correct) setScore(s => s + 1)
@@ -128,47 +133,42 @@ export default function QuizPage() {
             className="text-blue-600 hover:underline text-sm">← Quay lại kết quả</button>
         </div>
         <div className="space-y-6">
-          {questions.map((q, i) => {
-            const ua = userAnswers[i]
-            const correctAnswerText = q.options?.[parseInt(q.correct_answer)] ?? q.correct_answer
-            return (
-              <div key={q.id} className={`border rounded-xl p-5
-                ${ua?.isCorrect ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50'}`}>
-                <div className="flex gap-2 items-start mb-4">
-                  <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white
-                    ${ua?.isCorrect ? 'bg-green-500' : 'bg-red-500'}`}>
-                    {ua?.isCorrect ? '✓' : '✗'}
-                  </span>
-                  <p className="font-semibold text-gray-900">Câu {i + 1}: {q.question}</p>
+        {/* Trắc nghiệm: hiện các lựa chọn */}
+        {q.options && q.type === 'multiple_choice' && (
+          <div className="space-y-2 mb-4 ml-9">
+            {q.options.map((opt, j) => {
+              const isCorrectOpt = String(j) === q.correct_answer
+              const isUserOpt = String(j) === ua?.userAnswer
+              return (
+                <div key={j} className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-2
+                  ${isCorrectOpt ? 'border-green-500 bg-green-100 text-green-800' : ''}
+                  ${isUserOpt && !isCorrectOpt ? 'border-red-400 bg-red-100 text-red-800' : ''}
+                  ${!isCorrectOpt && !isUserOpt ? 'border-gray-200 bg-white text-gray-600' : ''}
+                `}>
+                  <span className="font-medium">{['A', 'B', 'C', 'D'][j]}.</span>
+                  <span className="flex-1">{opt}</span>
+                  {isCorrectOpt && <span className="text-green-600 font-semibold">✓ Đúng</span>}
+                  {isUserOpt && !isCorrectOpt && <span className="text-red-500 font-semibold">Bạn chọn</span>}
                 </div>
-                {q.options && (
-                  <div className="space-y-2 mb-4 ml-9">
-                    {q.options.map((opt, j) => {
-                      const isCorrectOpt = String(j) === q.correct_answer
-                      const isUserOpt = String(j) === ua?.userAnswer
-                      return (
-                        <div key={j} className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-2
-                          ${isCorrectOpt ? 'border-green-500 bg-green-100 text-green-800' : ''}
-                          ${isUserOpt && !isCorrectOpt ? 'border-red-400 bg-red-100 text-red-800' : ''}
-                          ${!isCorrectOpt && !isUserOpt ? 'border-gray-200 bg-white text-gray-600' : ''}
-                        `}>
-                          <span className="font-medium">{['A','B','C','D'][j]}.</span>
-                          <span className="flex-1">{opt}</span>
-                          {isCorrectOpt && <span className="text-green-600 font-semibold">✓ Đúng</span>}
-                          {isUserOpt && !isCorrectOpt && <span className="text-red-500 font-semibold">Bạn chọn</span>}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-                {q.explanation && (
-                  <div className="ml-9 mt-2 text-sm text-gray-600 bg-white border rounded-lg px-4 py-3">
-                    💡 {q.explanation}
-                  </div>
-                )}
+              )
+            })}
+          </div>
+        )}
+
+        {/* Điền từ: hiện đáp án user và đáp án đúng */}
+        {q.type === 'fill_in_blank' && (
+          <div className="ml-9 space-y-2 mb-4">
+            <div className={`px-4 py-2 rounded-lg border text-sm
+              ${ua?.isCorrect ? 'border-green-500 bg-green-100 text-green-800' : 'border-red-400 bg-red-100 text-red-800'}`}>
+              <span className="font-medium">Bạn trả lời: </span>{ua?.userAnswer || '(để trống)'}
+            </div>
+            {!ua?.isCorrect && (
+              <div className="px-4 py-2 rounded-lg border border-green-500 bg-green-100 text-green-800 text-sm">
+                <span className="font-medium">Đáp án đúng: </span>{q.correct_answer}
               </div>
-            )
-          })}
+            )}
+          </div>
+        )}
         </div>
         <div className="mt-8 flex gap-3 justify-center">
           <button onClick={resetQuiz}
@@ -245,7 +245,8 @@ export default function QuizPage() {
           style={{ width: `${((current + 1) / questions.length) * 100}%` }} />
       </div>
       <h2 className="text-lg font-semibold mb-6">{q.question}</h2>
-      {q.options && (
+      {/* Trắc nghiệm */}
+      {q.type === 'multiple_choice' && q.options && (
         <div className="space-y-3">
           {q.options.map((opt, i) => (
             <button key={i} disabled={answered}
@@ -261,9 +262,33 @@ export default function QuizPage() {
                   (answered && String(i) !== q.correct_answer && userAnswer !== String(i))
                   ? 'border-gray-600 bg-transparent text-white' : ''}
               `}>
-              <span className="font-medium mr-2">{['A','B','C','D'][i]}.</span>{opt}
+              <span className="font-medium mr-2">{['A', 'B', 'C', 'D'][i]}.</span>{opt}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Điền từ */}
+      {q.type === 'fill_in_blank' && (
+        <div>
+          <input
+            type="text"
+            disabled={answered}
+            value={userAnswer}
+            onChange={e => setUserAnswer(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !answered && userAnswer && checkAnswer()}
+            placeholder="Nhập câu trả lời..."
+            className={`w-full px-4 py-3 rounded-lg border outline-none text-white bg-transparent
+              ${answered && isCorrect ? 'border-green-500 bg-green-900' : ''}
+              ${answered && !isCorrect ? 'border-red-500 bg-red-900' : ''}
+              ${!answered ? 'border-gray-600 focus:border-blue-500' : ''}
+            `}
+          />
+          {answered && !isCorrect && (
+            <p className="text-green-400 text-sm mt-2">
+              ✓ Đáp án đúng: <span className="font-semibold">{q.correct_answer}</span>
+            </p>
+          )}
         </div>
       )}
       {answered && (

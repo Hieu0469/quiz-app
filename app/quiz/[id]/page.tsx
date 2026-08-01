@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
+import type { User } from '@supabase/supabase-js'
 
 type Question = {
   id: string
@@ -31,14 +32,16 @@ export default function QuizPage() {
   const [showReview, setShowReview] = useState(false)
   const [answered, setAnswered] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
-  const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]) // lưu lại tất cả đáp án
+  const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([])
+  const [user, setUser] = useState<User | null>(null)
+  const [resultSaved, setResultSaved] = useState(false)
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
     async function load() {
       const { data: set } = await supabase
         .from('quiz_sets').select('title').eq('id', id).single()
       if (set) setQuizTitle(set.title)
-
       const { data } = await supabase
         .from('questions').select('*')
         .eq('quiz_set_id', id).order('order_index')
@@ -48,6 +51,30 @@ export default function QuizPage() {
     load()
   }, [])
 
+  // Tự động lưu kết quả khi showResult = true
+  useEffect(() => {
+    if (!showResult || resultSaved) return
+    saveResult()
+  }, [showResult])
+
+  async function saveResult() {
+    if (!user) return // Chỉ lưu nếu đã đăng nhập
+    await supabase.from('quiz_results').insert({
+      user_id: user.id,
+      quiz_set_id: id,
+      quiz_title: quizTitle,
+      score,
+      total: questions.length,
+      answers: userAnswers.map((ua, i) => ({
+        question: questions[i]?.question,
+        userAnswer: questions[i]?.options?.[parseInt(ua.userAnswer)] ?? ua.userAnswer,
+        correctAnswer: questions[i]?.options?.[parseInt(questions[i]?.correct_answer)] ?? questions[i]?.correct_answer,
+        isCorrect: ua.isCorrect,
+      }))
+    })
+    setResultSaved(true)
+  }
+
   const q = questions[current]
 
   function checkAnswer() {
@@ -55,7 +82,6 @@ export default function QuizPage() {
     setIsCorrect(correct)
     setAnswered(true)
     if (correct) setScore(s => s + 1)
-    // Lưu đáp án của câu này
     setUserAnswers(prev => [...prev, {
       questionIndex: current,
       userAnswer,
@@ -77,6 +103,7 @@ export default function QuizPage() {
     setCurrent(0); setScore(0); setShowResult(false)
     setShowReview(false); setUserAnswer('')
     setAnswered(false); setUserAnswers([])
+    setResultSaved(false)
   }
 
   if (loading)
@@ -100,18 +127,13 @@ export default function QuizPage() {
           <button onClick={() => setShowReview(false)}
             className="text-blue-600 hover:underline text-sm">← Quay lại kết quả</button>
         </div>
-
         <div className="space-y-6">
           {questions.map((q, i) => {
             const ua = userAnswers[i]
-            const userAnswerText = q.options?.[parseInt(ua?.userAnswer)] ?? ua?.userAnswer ?? 'Chưa trả lời'
             const correctAnswerText = q.options?.[parseInt(q.correct_answer)] ?? q.correct_answer
-
             return (
               <div key={q.id} className={`border rounded-xl p-5
                 ${ua?.isCorrect ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50'}`}>
-
-                {/* Tiêu đề câu */}
                 <div className="flex gap-2 items-start mb-4">
                   <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white
                     ${ua?.isCorrect ? 'bg-green-500' : 'bg-red-500'}`}>
@@ -119,8 +141,6 @@ export default function QuizPage() {
                   </span>
                   <p className="font-semibold text-gray-900">Câu {i + 1}: {q.question}</p>
                 </div>
-
-                {/* Các đáp án */}
                 {q.options && (
                   <div className="space-y-2 mb-4 ml-9">
                     {q.options.map((opt, j) => {
@@ -141,8 +161,6 @@ export default function QuizPage() {
                     })}
                   </div>
                 )}
-
-                {/* Giải thích */}
                 {q.explanation && (
                   <div className="ml-9 mt-2 text-sm text-gray-600 bg-white border rounded-lg px-4 py-3">
                     💡 {q.explanation}
@@ -152,16 +170,11 @@ export default function QuizPage() {
             )
           })}
         </div>
-
         <div className="mt-8 flex gap-3 justify-center">
           <button onClick={resetQuiz}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg">
-            Làm lại từ đầu
-          </button>
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg">Làm lại từ đầu</button>
           <button onClick={() => router.push('/')}
-            className="px-6 py-3 border rounded-lg">
-            Trang chủ
-          </button>
+            className="px-6 py-3 border rounded-lg">Trang chủ</button>
         </div>
       </div>
     )
@@ -172,16 +185,24 @@ export default function QuizPage() {
       <div className="max-w-md mx-auto mt-20 text-center p-8 border rounded-xl shadow">
         <h2 className="text-2xl font-bold mb-2">{quizTitle}</h2>
         <p className="text-gray-500 mb-6">Kết quả của bạn</p>
-        <p className="text-6xl font-bold text-blue-600 mb-2">
-          {score}/{questions.length}
-        </p>
-        <p className="text-gray-400 mb-8">
+        <p className="text-6xl font-bold text-blue-600 mb-2">{score}/{questions.length}</p>
+        <p className="text-gray-400 mb-4">
           {score === questions.length ? '🎉 Hoàn hảo!'
             : score >= questions.length / 2 ? '👍 Tốt lắm!'
             : '💪 Cố gắng hơn nhé!'}
         </p>
 
-        {/* Thống kê nhanh */}
+        {/* Thông báo lưu */}
+        {user ? (
+          <p className="text-sm text-green-600 mb-6">
+            ✓ Kết quả đã được lưu vào lịch sử
+          </p>
+        ) : (
+          <p className="text-sm text-gray-400 mb-6">
+            Đăng nhập để lưu lịch sử làm bài
+          </p>
+        )}
+
         <div className="flex justify-center gap-6 mb-8">
           <div className="text-center">
             <p className="text-2xl font-bold text-green-500">{score}</p>
@@ -205,13 +226,9 @@ export default function QuizPage() {
             📋 Xem lại bài làm
           </button>
           <button onClick={resetQuiz}
-            className="w-full py-3 border rounded-lg">
-            🔄 Làm lại
-          </button>
+            className="w-full py-3 border rounded-lg">🔄 Làm lại</button>
           <button onClick={() => router.push('/')}
-            className="w-full py-3 text-gray-400 hover:underline text-sm">
-            Trang chủ
-          </button>
+            className="w-full py-3 text-gray-400 hover:underline text-sm">Trang chủ</button>
         </div>
       </div>
     )
@@ -223,14 +240,11 @@ export default function QuizPage() {
         <span className="text-sm text-gray-400">{quizTitle}</span>
         <span className="text-sm text-gray-400">{current + 1}/{questions.length}</span>
       </div>
-
       <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
         <div className="bg-blue-600 h-2 rounded-full transition-all"
           style={{ width: `${((current + 1) / questions.length) * 100}%` }} />
       </div>
-
       <h2 className="text-lg font-semibold mb-6">{q.question}</h2>
-
       {q.options && (
         <div className="space-y-3">
           {q.options.map((opt, i) => (
@@ -238,25 +252,20 @@ export default function QuizPage() {
               onClick={() => setUserAnswer(String(i))}
               className={`w-full text-left px-4 py-3 rounded-lg border transition
                 ${answered && String(i) === q.correct_answer
-                  ? 'border-green-500 bg-green-500 text-white'
-                  : ''}
+                  ? 'border-green-500 bg-green-500 text-white' : ''}
                 ${answered && userAnswer === String(i) && !isCorrect
-                  ? 'border-red-400 bg-red-500 text-white'
-                  : ''}
+                  ? 'border-red-400 bg-red-500 text-white' : ''}
                 ${!answered && userAnswer === String(i)
-                  ? 'border-blue-500 bg-blue-600 text-white'
-                  : ''}
+                  ? 'border-blue-500 bg-blue-600 text-white' : ''}
                 ${(!answered && userAnswer !== String(i)) ||
                   (answered && String(i) !== q.correct_answer && userAnswer !== String(i))
-                  ? 'border-gray-600 bg-transparent text-white'
-                  : ''}
+                  ? 'border-gray-600 bg-transparent text-white' : ''}
               `}>
               <span className="font-medium mr-2">{['A','B','C','D'][i]}.</span>{opt}
             </button>
           ))}
         </div>
       )}
-
       {answered && (
         <div className={`mt-4 p-4 rounded-lg text-sm
           ${isCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
@@ -267,7 +276,6 @@ export default function QuizPage() {
           {q.explanation && <p>{q.explanation}</p>}
         </div>
       )}
-
       <div className="mt-6">
         {!answered ? (
           <button onClick={checkAnswer} disabled={!userAnswer}

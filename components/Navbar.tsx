@@ -29,6 +29,9 @@ export default function Navbar() {
             <Link href="/my-quizzes" className="text-sm text-gray-600 hover:underline">
               Bộ câu hỏi của tôi
             </Link>
+            <Link href="/history" className="text-sm text-gray-600 hover:underline">
+              Lịch sử
+            </Link>
             <div className="flex items-center gap-2">
               <img src={user.user_metadata.avatar_url} className="w-8 h-8 rounded-full" />
               <button onClick={signOut} className="text-sm text-gray-400 hover:text-red-500">

@@ -83,30 +83,30 @@ export default function EditQuiz() {
 
       {/* Form thêm câu hỏi */}
       <div className="border rounded-xl p-5 mb-8 bg-gray-50">
-        <h2 className="font-semibold mb-4">Thêm câu hỏi trắc nghiệm</h2>
+        <h2 className="font-semibold mb-4 text-gray-900">Thêm câu hỏi trắc nghiệm</h2>
         <textarea value={question} onChange={e => setQuestion(e.target.value)}
           placeholder="Nội dung câu hỏi *" rows={2}
-          className="w-full border rounded-lg px-4 py-2 mb-4 outline-none focus:border-blue-500 resize-none" />
+          className="w-full border rounded-lg px-4 py-2 mb-4 outline-none focus:border-blue-500 resize-none bg-white text-gray-900 placeholder-gray-400" />
 
-        <p className="text-sm text-gray-500 mb-2">Chọn đáp án đúng (●) và điền nội dung:</p>
+        <p className="text-sm text-gray-600 mb-2">Chọn đáp án đúng (●) và điền nội dung:</p>
         <div className="space-y-2 mb-4">
           {options.map((opt, i) => (
             <div key={i} className="flex gap-3 items-center">
               <input type="radio" name="correct" checked={correctIndex === i}
                 onChange={() => setCorrectIndex(i)} className="w-4 h-4" />
-              <span className="font-medium text-sm w-4">{['A','B','C','D'][i]}</span>
+              <span className="font-medium text-sm w-4 text-gray-700">{['A','B','C','D'][i]}</span>
               <input value={opt} onChange={e => {
                 const arr = [...options]; arr[i] = e.target.value; setOptions(arr)
               }}
                 placeholder={`Đáp án ${['A','B','C','D'][i]}`}
-                className="flex-1 border rounded-lg px-3 py-2 outline-none focus:border-blue-500" />
+                className="flex-1 border rounded-lg px-3 py-2 outline-none focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400" />
             </div>
           ))}
         </div>
 
         <input value={explanation} onChange={e => setExplanation(e.target.value)}
           placeholder="Giải thích đáp án (không bắt buộc)"
-          className="w-full border rounded-lg px-4 py-2 mb-4 outline-none focus:border-blue-500" />
+          className="w-full border rounded-lg px-4 py-2 mb-4 outline-none focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400" />
 
         <button onClick={addQuestion}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg">

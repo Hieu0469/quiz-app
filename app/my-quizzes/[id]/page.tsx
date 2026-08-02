@@ -59,8 +59,14 @@ export default function EditQuiz() {
       opts = options
       answer = String(correctIndex)
     } else {
-      if (!fillAnswer.trim()) return alert('Nhập đáp án!')
-      answer = fillAnswer.trim()
+      // Kiểm tra đủ đáp án cho tất cả ô trống
+      const blankCount = question.split('___').length - 1
+      const answers = fillAnswer.split('|')
+      if (blankCount === 0) return alert('Nhập ___ vào câu hỏi để tạo chỗ trống!')
+      if (answers.some(a => !a.trim()) || answers.length < blankCount) {
+        return alert(`Điền đủ đáp án cho ${blankCount} chỗ trống!`)
+      }
+      answer = fillAnswer
     }
 
     await supabase.from('questions').insert({
@@ -156,12 +162,47 @@ export default function EditQuiz() {
         {/* Điền từ */}
         {type === 'fill_in_blank' && (
           <div className="mb-4">
-            <p className="text-sm text-gray-600 mb-2">Đáp án đúng:</p>
-            <input value={fillAnswer} onChange={e => setFillAnswer(e.target.value)}
-              placeholder="Ví dụ: Hà Nội"
-              className="w-full border rounded-lg px-4 py-2 outline-none focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400" />
-            <p className="text-xs text-gray-400 mt-1">
-              * Hệ thống sẽ bỏ qua hoa/thường khi chấm điểm
+            <p className="text-sm text-gray-600 mb-2">
+              Dùng <span className="font-mono bg-gray-200 px-1 rounded">___</span> để đánh dấu chỗ trống trong câu hỏi.
+            </p>
+            <p className="text-xs text-gray-400 mb-3">
+              Ví dụ: "___ là thủ đô của ___" → 2 ô điền
+            </p>
+
+            {/* Preview số ô trống */}
+            {question.includes('___') && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700 font-medium mb-2">
+                  Phát hiện {question.split('___').length - 1} chỗ trống — nhập đáp án đúng:
+                </p>
+                <div className="space-y-2">
+                  {Array.from({ length: question.split('___').length - 1 }).map((_, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <span className="text-sm text-blue-600 w-16 shrink-0">Ô {i + 1}:</span>
+                      <input
+                        value={fillAnswer.split('|')[i] || ''}
+                        onChange={e => {
+                          const parts = fillAnswer.split('|')
+                          parts[i] = e.target.value
+                          setFillAnswer(parts.join('|'))
+                        }}
+                        placeholder={`Đáp án ô ${i + 1}`}
+                        className="flex-1 border rounded-lg px-3 py-1.5 outline-none focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400 text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!question.includes('___') && (
+              <p className="text-sm text-orange-500">
+                ⚠ Nhập ___ vào câu hỏi để tạo chỗ trống
+              </p>
+            )}
+
+            <p className="text-xs text-gray-400 mt-2">
+              * Hệ thống bỏ qua hoa/thường khi chấm điểm
             </p>
           </div>
         )}

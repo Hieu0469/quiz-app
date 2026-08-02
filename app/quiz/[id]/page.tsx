@@ -35,7 +35,8 @@ export default function QuizPage() {
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [resultSaved, setResultSaved] = useState(false)
-
+  const [fillAnswers, setFillAnswers] = useState<string[]>([]) // thay thế userAnswer cho fill_in_blank
+  
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user))
     async function load() {
@@ -79,17 +80,25 @@ export default function QuizPage() {
 
   function checkAnswer() {
     let correct = false
+    let savedAnswer = userAnswer
+
     if (q.type === 'fill_in_blank') {
-      correct = userAnswer.trim().toLowerCase() === q.correct_answer.toLowerCase()
+      const correctParts = q.correct_answer.split('|')
+      const userParts = fillAnswers
+      correct = correctParts.every(
+        (part, i) => (userParts[i] || '').trim().toLowerCase() === part.trim().toLowerCase()
+      )
+      savedAnswer = fillAnswers.join('|')
     } else {
       correct = userAnswer === q.correct_answer
     }
+
     setIsCorrect(correct)
     setAnswered(true)
     if (correct) setScore(s => s + 1)
     setUserAnswers(prev => [...prev, {
       questionIndex: current,
-      userAnswer,
+      userAnswer: savedAnswer,
       isCorrect: correct
     }])
   }
@@ -100,6 +109,7 @@ export default function QuizPage() {
     } else {
       setCurrent(c => c + 1)
       setUserAnswer('')
+      setFillAnswers([])
       setAnswered(false)
     }
   }
@@ -107,8 +117,8 @@ export default function QuizPage() {
   function resetQuiz() {
     setCurrent(0); setScore(0); setShowResult(false)
     setShowReview(false); setUserAnswer('')
-    setAnswered(false); setUserAnswers([])
-    setResultSaved(false)
+    setFillAnswers([]); setAnswered(false)
+    setUserAnswers([]); setResultSaved(false)
   }
 
   if (loading)
@@ -174,18 +184,30 @@ export default function QuizPage() {
                 {/* Điền từ */}
                 {q.type === 'fill_in_blank' && (
                   <div className="ml-9 space-y-2 mb-4">
-                    <div className={`px-4 py-2 rounded-lg border text-sm
-                      ${ua?.isCorrect
-                        ? 'border-green-500 bg-green-100 text-green-800'
-                        : 'border-red-400 bg-red-100 text-red-800'}`}>
-                      <span className="font-medium">Bạn trả lời: </span>
-                      {ua?.userAnswer || '(để trống)'}
-                    </div>
-                    {!ua?.isCorrect && (
-                      <div className="px-4 py-2 rounded-lg border border-green-500 bg-green-100 text-green-800 text-sm">
-                        <span className="font-medium">Đáp án đúng: </span>{q.correct_answer}
-                      </div>
-                    )}
+                    <p className="text-sm text-gray-500 font-medium">Câu hỏi: {q.question.replace(/___/g, '[ ___ ]')}</p>
+                    {q.correct_answer.split('|').map((correctAns, i) => {
+                      const userAns = (ua?.userAnswer || '').split('|')[i] || ''
+                      const isPartCorrect = userAns.trim().toLowerCase() === correctAns.trim().toLowerCase()
+                      return (
+                        <div key={i} className="flex gap-2 items-center text-sm">
+                          <span className="text-gray-500 shrink-0">Ô {i + 1}:</span>
+                          <span className={`px-3 py-1 rounded-lg border
+                            ${isPartCorrect
+                              ? 'border-green-500 bg-green-100 text-green-800'
+                              : 'border-red-400 bg-red-100 text-red-800'}`}>
+                            {userAns || '(để trống)'}
+                          </span>
+                          {!isPartCorrect && (
+                            <>
+                              <span className="text-gray-400">→</span>
+                              <span className="px-3 py-1 rounded-lg border border-green-500 bg-green-100 text-green-800">
+                                {correctAns}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
 
@@ -300,24 +322,53 @@ export default function QuizPage() {
 
       {/* Điền từ */}
       {q.type === 'fill_in_blank' && (
-        <div>
-          <input
-            type="text"
-            disabled={answered}
-            value={userAnswer}
-            onChange={e => setUserAnswer(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !answered && userAnswer && checkAnswer()}
-            placeholder="Nhập câu trả lời..."
-            className={`w-full px-4 py-3 rounded-lg border outline-none text-white bg-transparent
-              ${answered && isCorrect ? 'border-green-500 bg-green-900' : ''}
-              ${answered && !isCorrect ? 'border-red-500 bg-red-900' : ''}
-              ${!answered ? 'border-gray-600 focus:border-blue-500' : ''}
-            `}
-          />
+        <div className="space-y-3">
+          {/* Hiển thị câu hỏi với các ô điền inline */}
+          <div className="text-base leading-relaxed">
+            {q.question.split('___').map((part, i, arr) => (
+              <span key={i}>
+                <span>{part}</span>
+                {i < arr.length - 1 && (
+                  <input
+                    type="text"
+                    disabled={answered}
+                    value={fillAnswers[i] || ''}
+                    onChange={e => {
+                      const updated = [...fillAnswers]
+                      updated[i] = e.target.value
+                      setFillAnswers(updated)
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !answered &&
+                          fillAnswers.filter(a => a.trim()).length === q.question.split('___').length - 1) {
+                        checkAnswer()
+                      }
+                    }}
+                    placeholder={`Ô ${i + 1}`}
+                    className={`inline-block mx-1 px-3 py-1 rounded-lg border outline-none text-white w-32 text-center
+                      ${answered
+                        ? (fillAnswers[i] || '').trim().toLowerCase() ===
+                          q.correct_answer.split('|')[i]?.trim().toLowerCase()
+                          ? 'border-green-500 bg-green-900'
+                          : 'border-red-500 bg-red-900'
+                        : 'border-gray-500 bg-gray-800 focus:border-blue-500'}
+                    `}
+                  />
+                )}
+              </span>
+            ))}
+          </div>
+
+          {/* Hiện đáp án đúng sau khi trả lời sai */}
           {answered && !isCorrect && (
-            <p className="text-green-400 text-sm mt-2">
-              ✓ Đáp án đúng: <span className="font-semibold">{q.correct_answer}</span>
-            </p>
+            <div className="mt-3 p-3 bg-green-900 border border-green-600 rounded-lg">
+              <p className="text-green-400 text-sm font-semibold mb-1">Đáp án đúng:</p>
+              {q.correct_answer.split('|').map((ans, i) => (
+                <p key={i} className="text-green-300 text-sm">
+                  Ô {i + 1}: <span className="font-semibold">{ans}</span>
+                </p>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -333,7 +384,12 @@ export default function QuizPage() {
       )}
       <div className="mt-6">
         {!answered ? (
-          <button onClick={checkAnswer} disabled={!userAnswer}
+          <button onClick={checkAnswer}
+            disabled={
+              q.type === 'fill_in_blank'
+                ? fillAnswers.filter(a => a.trim()).length < q.question.split('___').length - 1
+                : !userAnswer
+            }
             className="w-full py-3 bg-blue-600 text-white rounded-lg disabled:opacity-40">
             Kiểm tra
           </button>

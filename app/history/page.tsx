@@ -23,6 +23,7 @@ export default function History() {
   const [results, setResults] = useState<Result[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Result | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -39,9 +40,31 @@ export default function History() {
       .order('created_at', { ascending: false })
     if (data) {
       setResults(data)
-      if (data.length > 0) setSelected(data[0]) // tự chọn bài đầu tiên
+      if (data.length > 0) setSelected(data[0])
     }
     setLoading(false)
+  }
+
+  async function deleteOne(id: string) {
+    if (!confirm('Xóa bài làm này?')) return
+    setDeleting(true)
+    await supabase.from('quiz_results').delete().eq('id', id)
+    const updated = results.filter(r => r.id !== id)
+    setResults(updated)
+    setSelected(updated.length > 0 ? updated[0] : null)
+    setDeleting(false)
+  }
+
+  async function deleteAll() {
+    if (!confirm('Xóa toàn bộ lịch sử? Không thể hoàn tác!')) return
+    setDeleting(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('quiz_results').delete().eq('user_id', user.id)
+    }
+    setResults([])
+    setSelected(null)
+    setDeleting(false)
   }
 
   if (loading)
@@ -50,7 +73,7 @@ export default function History() {
   if (results.length === 0)
     return (
       <div className="text-center mt-20">
-        <p className="text-gray-400 mb-4">Bạn chưa làm bài nào.</p>
+        <p className="text-gray-400 mb-4">Bạn chưa có lịch sử làm bài nào.</p>
         <Link href="/" className="text-blue-600 hover:underline">
           Xem các bộ câu hỏi →
         </Link>
@@ -59,7 +82,14 @@ export default function History() {
 
   return (
     <div className="max-w-6xl mx-auto mt-10 p-6">
-      <h1 className="text-2xl font-bold mb-6">📊 Lịch sử làm bài</h1>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">📊 Lịch sử làm bài</h1>
+        <button onClick={deleteAll} disabled={deleting}
+          className="px-4 py-2 border border-red-400 text-red-500 rounded-lg text-sm hover:bg-red-50 disabled:opacity-40 transition">
+          🗑 Xóa tất cả
+        </button>
+      </div>
 
       <div className="flex gap-6 h-[calc(100vh-160px)]">
 
@@ -68,11 +98,20 @@ export default function History() {
           {results.map(r => (
             <div key={r.id}
               onClick={() => setSelected(r)}
-              className={`border rounded-xl p-4 cursor-pointer transition
+              className={`border rounded-xl p-4 cursor-pointer transition group relative
                 ${selected?.id === r.id
                   ? 'border-blue-500 bg-blue-50'
                   : 'hover:border-gray-400'}`}>
-              <p className="font-semibold text-sm text-gray-900 truncate">{r.quiz_title}</p>
+
+              {/* Nút xóa từng bài */}
+              <button
+                onClick={e => { e.stopPropagation(); deleteOne(r.id) }}
+                disabled={deleting}
+                className="absolute top-3 right-3 w-6 h-6 rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">
+                ✕
+              </button>
+
+              <p className="font-semibold text-sm text-gray-900 truncate pr-6">{r.quiz_title}</p>
               <p className="text-xs text-gray-400 mt-0.5">
                 {new Date(r.created_at).toLocaleDateString('vi-VN', {
                   day: '2-digit', month: '2-digit', year: 'numeric',
@@ -90,7 +129,6 @@ export default function History() {
                   {Math.round((r.score / r.total) * 100)}%
                 </span>
               </div>
-              {/* Mini progress bar */}
               <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
                 <div className={`h-1.5 rounded-full transition-all
                   ${r.score === r.total ? 'bg-green-500'
@@ -106,7 +144,6 @@ export default function History() {
         <div className="flex-1 overflow-y-auto border rounded-xl p-6">
           {selected ? (
             <>
-              {/* Header */}
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">{selected.quiz_title}</h2>
@@ -117,10 +154,18 @@ export default function History() {
                     })}
                   </p>
                 </div>
-                <Link href={`/quiz/${selected.quiz_set_id}`}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm shrink-0">
-                  Làm lại →
-                </Link>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => deleteOne(selected.id)}
+                    disabled={deleting}
+                    className="px-3 py-2 border border-red-400 text-red-500 rounded-lg text-sm hover:bg-red-50 disabled:opacity-40 transition">
+                    🗑 Xóa bài này
+                  </button>
+                  <Link href={`/quiz/${selected.quiz_set_id}`}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
+                    Làm lại →
+                  </Link>
+                </div>
               </div>
 
               {/* Tổng kết */}
@@ -146,9 +191,7 @@ export default function History() {
               <div className="space-y-3">
                 {selected.answers.map((a, i) => (
                   <div key={i} className={`rounded-xl p-4 border
-                    ${a.isCorrect
-                      ? 'bg-green-50 border-green-300'
-                      : 'bg-red-50 border-red-300'}`}>
+                    ${a.isCorrect ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
                     <div className="flex gap-2 items-start">
                       <span className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white
                         ${a.isCorrect ? 'bg-green-500' : 'bg-red-500'}`}>

@@ -124,90 +124,90 @@ export default function QuizPage() {
     )
 
   // Màn hình xem lại bài
-if (showReview)
-  return (
-    <div className="max-w-2xl mx-auto mt-10 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">📋 Xem lại bài làm</h2>
-        <button onClick={() => setShowReview(false)}
-          className="text-blue-600 hover:underline text-sm">← Quay lại kết quả</button>
-      </div>
+  if (showReview)
+    return (
+      <div className="max-w-2xl mx-auto mt-10 p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">📋 Xem lại bài làm</h2>
+          <button onClick={() => setShowReview(false)}
+            className="text-blue-600 hover:underline text-sm">← Quay lại kết quả</button>
+        </div>
 
-      <div className="space-y-6">
-        {questions.map((q, i) => {
-          const ua = userAnswers[i]
-          return (
-            <div key={q.id} className={`border rounded-xl p-5
-              ${ua?.isCorrect ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50'}`}>
+        <div className="space-y-6">
+          {questions.map((q, i) => {
+            const ua = userAnswers[i]
+            return (
+              <div key={q.id} className={`border rounded-xl p-5
+                ${ua?.isCorrect ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50'}`}>
 
-              {/* Tiêu đề câu */}
-              <div className="flex gap-2 items-start mb-4">
-                <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white
-                  ${ua?.isCorrect ? 'bg-green-500' : 'bg-red-500'}`}>
-                  {ua?.isCorrect ? '✓' : '✗'}
-                </span>
-                <p className="font-semibold text-gray-900">Câu {i + 1}: {q.question}</p>
-              </div>
-
-              {/* Trắc nghiệm */}
-              {q.type === 'multiple_choice' && q.options && (
-                <div className="space-y-2 mb-4 ml-9">
-                  {q.options.map((opt, j) => {
-                    const isCorrectOpt = String(j) === q.correct_answer
-                    const isUserOpt = String(j) === ua?.userAnswer
-                    return (
-                      <div key={j} className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-2
-                        ${isCorrectOpt ? 'border-green-500 bg-green-100 text-green-800' : ''}
-                        ${isUserOpt && !isCorrectOpt ? 'border-red-400 bg-red-100 text-red-800' : ''}
-                        ${!isCorrectOpt && !isUserOpt ? 'border-gray-200 bg-white text-gray-600' : ''}
-                      `}>
-                        <span className="font-medium">{['A', 'B', 'C', 'D'][j]}.</span>
-                        <span className="flex-1">{opt}</span>
-                        {isCorrectOpt && <span className="text-green-600 font-semibold">✓ Đúng</span>}
-                        {isUserOpt && !isCorrectOpt && <span className="text-red-500 font-semibold">Bạn chọn</span>}
-                      </div>
-                    )
-                  })}
+                {/* Tiêu đề câu */}
+                <div className="flex gap-2 items-start mb-4">
+                  <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white
+                    ${ua?.isCorrect ? 'bg-green-500' : 'bg-red-500'}`}>
+                    {ua?.isCorrect ? '✓' : '✗'}
+                  </span>
+                  <p className="font-semibold text-gray-900">Câu {i + 1}: {q.question}</p>
                 </div>
-              )}
 
-              {/* Điền từ */}
-              {q.type === 'fill_in_blank' && (
-                <div className="ml-9 space-y-2 mb-4">
-                  <div className={`px-4 py-2 rounded-lg border text-sm
-                    ${ua?.isCorrect
-                      ? 'border-green-500 bg-green-100 text-green-800'
-                      : 'border-red-400 bg-red-100 text-red-800'}`}>
-                    <span className="font-medium">Bạn trả lời: </span>
-                    {ua?.userAnswer || '(để trống)'}
+                {/* Trắc nghiệm */}
+                {q.type === 'multiple_choice' && q.options && (
+                  <div className="space-y-2 mb-4 ml-9">
+                    {q.options.map((opt, j) => {
+                      const isCorrectOpt = String(j) === q.correct_answer
+                      const isUserOpt = String(j) === ua?.userAnswer
+                      return (
+                        <div key={j} className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-2
+                          ${isCorrectOpt ? 'border-green-500 bg-green-100 text-green-800' : ''}
+                          ${isUserOpt && !isCorrectOpt ? 'border-red-400 bg-red-100 text-red-800' : ''}
+                          ${!isCorrectOpt && !isUserOpt ? 'border-gray-200 bg-white text-gray-600' : ''}
+                        `}>
+                          <span className="font-medium">{['A', 'B', 'C', 'D'][j]}.</span>
+                          <span className="flex-1">{opt}</span>
+                          {isCorrectOpt && <span className="text-green-600 font-semibold">✓ Đúng</span>}
+                          {isUserOpt && !isCorrectOpt && <span className="text-red-500 font-semibold">Bạn chọn</span>}
+                        </div>
+                      )
+                    })}
                   </div>
-                  {!ua?.isCorrect && (
-                    <div className="px-4 py-2 rounded-lg border border-green-500 bg-green-100 text-green-800 text-sm">
-                      <span className="font-medium">Đáp án đúng: </span>{q.correct_answer}
+                )}
+
+                {/* Điền từ */}
+                {q.type === 'fill_in_blank' && (
+                  <div className="ml-9 space-y-2 mb-4">
+                    <div className={`px-4 py-2 rounded-lg border text-sm
+                      ${ua?.isCorrect
+                        ? 'border-green-500 bg-green-100 text-green-800'
+                        : 'border-red-400 bg-red-100 text-red-800'}`}>
+                      <span className="font-medium">Bạn trả lời: </span>
+                      {ua?.userAnswer || '(để trống)'}
                     </div>
-                  )}
-                </div>
-              )}
+                    {!ua?.isCorrect && (
+                      <div className="px-4 py-2 rounded-lg border border-green-500 bg-green-100 text-green-800 text-sm">
+                        <span className="font-medium">Đáp án đúng: </span>{q.correct_answer}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {/* Giải thích */}
-              {q.explanation && (
-                <div className="ml-9 mt-2 text-sm text-gray-600 bg-white border rounded-lg px-4 py-3">
-                  💡 {q.explanation}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
+                {/* Giải thích */}
+                {q.explanation && (
+                  <div className="ml-9 mt-2 text-sm text-gray-600 bg-white border rounded-lg px-4 py-3">
+                    💡 {q.explanation}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
 
-      <div className="mt-8 flex gap-3 justify-center">
-        <button onClick={resetQuiz}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg">Làm lại từ đầu</button>
-        <button onClick={() => router.push('/')}
-          className="px-6 py-3 border rounded-lg">Trang chủ</button>
+        <div className="mt-8 flex gap-3 justify-center">
+          <button onClick={resetQuiz}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg">Làm lại từ đầu</button>
+          <button onClick={() => router.push('/')}
+            className="px-6 py-3 border rounded-lg">Trang chủ</button>
+        </div>
       </div>
-    </div>
-  )
+    )
 
   // Màn hình kết quả
   if (showResult)

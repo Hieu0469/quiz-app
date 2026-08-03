@@ -296,7 +296,9 @@ export default function QuizPage() {
         <div className="bg-blue-600 h-2 rounded-full transition-all"
           style={{ width: `${((current + 1) / questions.length) * 100}%` }} />
       </div>
-      <h2 className="text-lg font-semibold mb-6">{q.question}</h2>
+      {q.type !== 'fill_in_blank' && (
+        <h2 className="text-lg font-semibold mb-6">{q.question}</h2>
+      )}
       {/* Trắc nghiệm */}
       {q.type === 'multiple_choice' && q.options && (
         <div className="space-y-3">

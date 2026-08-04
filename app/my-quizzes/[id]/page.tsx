@@ -225,13 +225,13 @@ export default function EditQuiz() {
       )}
       <div className="space-y-3">
         {questions.map((q, i) => (
-          <div key={q.id} className="border rounded-xl p-4 flex justify-between items-start">
+          <div key={q.id} className="border border-gray-200 rounded-xl p-4 flex justify-between items-start bg-white">
             <div className="flex-1">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 mb-1 inline-block">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 mb-2 inline-block">
                 {q.type === 'multiple_choice' ? 'Trắc nghiệm' : 'Điền từ'}
               </span>
-              <p className="font-medium text-white">{i + 1}. {q.question}</p>
-              <p className="text-sm text-green-400 mt-1">
+              <p className="font-medium text-gray-900">{i + 1}. {q.question}</p>
+              <p className="text-sm text-green-600 mt-1">
                 ✓ {q.type === 'multiple_choice'
                   ? q.options?.[parseInt(q.correct_answer)]
                   : q.correct_answer}

@@ -164,7 +164,7 @@ export default function EditQuiz() {
         </div>
         <textarea value={question} onChange={e => setQuestion(e.target.value)}
           placeholder={type === 'fill_in_blank' ? 'Ví dụ: ___ là thủ đô của ___' : 'Nội dung câu hỏi *'}
-          rows={2}
+          rows={6}
           className="w-full border rounded-lg px-4 py-2 mb-4 outline-none focus:border-blue-500 resize-none bg-white text-gray-900 placeholder-gray-400" />
         {type === 'multiple_choice' && (
           <div className="space-y-2 mb-4">
@@ -265,7 +265,7 @@ export default function EditQuiz() {
             </div>
 
             <textarea value={editQuestion} onChange={e => setEditQuestion(e.target.value)}
-              rows={2} placeholder="Nội dung câu hỏi *"
+              rows={6} placeholder="Nội dung câu hỏi *"
               className="w-full border rounded-lg px-4 py-2 mb-4 outline-none focus:border-blue-500 resize-none text-gray-900 placeholder-gray-400" />
 
             {/* Sửa trắc nghiệm */}

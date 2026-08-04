@@ -305,7 +305,7 @@ export default function QuizPage() {
           {q.options.map((opt, i) => (
             <button key={i} disabled={answered}
               onClick={() => setUserAnswer(String(i))}
-              className={`w-full text-left px-4 py-3 rounded-lg border transition
+              className={`w-full text-left px-4 py-3 rounded-lg border transition font-medium
                 ${answered && String(i) === q.correct_answer
                   ? 'border-green-500 bg-green-500 text-white' : ''}
                 ${answered && userAnswer === String(i) && !isCorrect
@@ -314,9 +314,9 @@ export default function QuizPage() {
                   ? 'border-blue-500 bg-blue-600 text-white' : ''}
                 ${(!answered && userAnswer !== String(i)) ||
                   (answered && String(i) !== q.correct_answer && userAnswer !== String(i))
-                  ? 'border-gray-600 bg-transparent text-white' : ''}
+                  ? 'border-gray-300 bg-white text-gray-900' : ''}
               `}>
-              <span className="font-medium mr-2">{['A', 'B', 'C', 'D'][i]}.</span>{opt}
+              <span className="font-semibold mr-2">{['A', 'B', 'C', 'D'][i]}.</span>{opt}
             </button>
           ))}
         </div>
